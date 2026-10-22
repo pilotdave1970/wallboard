@@ -1,7 +1,0 @@
-*.exe
-*.exe.old
-*.exe.new
-dist/
-JetsWallboard-Windows.zip
-settings.json
-pictures/
