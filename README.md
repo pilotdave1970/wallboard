@@ -2,13 +2,13 @@
 
 A wall display for your home PC: a big clock, weather with a radar map and National Weather Service warnings, live air traffic overhead, and your family calendar. It runs on Windows 10 or 11, and you don't need a Raspberry Pi or an antenna.
 
-**Current version: v1.1.4** (October 21, 2026)
+**Current version: v1.1.5** (October 21, 2026)
 
 ---
 
 ## Install
 
-1. Download **JetsWallboard-v1.1.4.zip** from this page: click the file name, then **Download raw file** (the download arrow on the right).
+1. Download **JetsWallboard-v1.1.5.zip** from this page: click the file name, then **Download raw file** (the download arrow on the right).
 2. Right-click the downloaded zip and choose **Extract All**. Put the folder somewhere you can save files, such as **Documents**. Don't use Program Files, because the app needs to update itself in that folder.
 3. Open the folder and double-click **JetsWallboard.exe**.
 4. The first time, Windows may say **"Windows protected your PC"**, because the app isn't code-signed. Click **More info**, then **Run anyway**.
@@ -35,7 +35,7 @@ The bar along the bottom switches screens:
 |---|---|
 | **Home** | Clock, weather, nearby aircraft and upcoming events together |
 | **Flights** | Big flight radar and the list of nearby aircraft |
-| **Weather** | Forecast, animated rain radar and any active warnings |
+| **Weather** | Animated rain radar, active warnings, current conditions, the next 12 hours and a 7-day forecast |
 | **Clock** | Just the time and date, large |
 | **Week** | The family calendar for the week or month |
 
@@ -114,7 +114,8 @@ Aircraft data: [adsb.lol](https://adsb.lol), [airplanes.live](https://airplanes.
 
 | Version | Date | Changes |
 |---|---|---|
-| **v1.1.4** | October 21, 2026 | Check for updates now finds the newest zip on this GitHub page. |
+| **v1.1.5** | October 21, 2026 | Weather screen: the right side now shows current conditions (wind, gusts, humidity, rain chance, UV, pressure, visibility, sunrise and sunset), the next 12 hours and a 7-day forecast under the warnings. Moon icons at night. |
+| v1.1.4 | October 21, 2026 | Check for updates now finds the newest zip on this GitHub page. |
 | v1.1.3 | October 21, 2026 | Added the full-screen button in the bottom bar (or press F). |
 | v1.1.2 | October 21, 2026 | Fixed "refused to connect": the board stays running while its window is open. |
 | v1.1.1 | October 21, 2026 | Fixed "no page found" when another program uses port 8088: the board picks a free port. |
