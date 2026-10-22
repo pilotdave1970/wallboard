@@ -2,13 +2,13 @@
 
 A wall display for your home PC: a big clock, weather with a radar map and National Weather Service warnings, live air traffic overhead, and your family calendar. It runs on Windows 10 or 11, and you don't need a Raspberry Pi or an antenna.
 
-**Current version: v1.1.6** (October 21, 2026)
+**Current version: v1.1.7** (October 21, 2026)
 
 ---
 
 ## Install
 
-1. Download **JetsWallboard-v1.1.6.zip** from this page: click the file name, then **Download raw file** (the download arrow on the right).
+1. Download **JetsWallboard-v1.1.7.zip** from this page: click the file name, then **Download raw file** (the download arrow on the right).
 2. Right-click the downloaded zip and choose **Extract All**. Put the folder somewhere you can save files, such as **Documents**. Don't use Program Files, because the app needs to update itself in that folder.
 3. Open the folder and double-click **JetsWallboard.exe**.
 4. The first time, Windows may say **"Windows protected your PC"**, because the app isn't code-signed. Click **More info**, then **Run anyway**.
@@ -48,6 +48,8 @@ The small buttons on the right:
 | 🎨 Palette | Changes the color theme |
 | ⛶ Corner arrows | **Full screen** on or off (you can also press **F**; **Esc** leaves) |
 | ☾ Moon | Night dimming on or off |
+
+**Menu and pointer:** after 30 seconds without the mouse, touch or keyboard, the bottom menu slides away and the screens use the full height. Move the mouse, touch the screen or press a key to bring it back. The mouse pointer hides after 15 seconds. The menu stays put while Settings, the layout editor or the theme picker is open.
 
 **Aircraft:** tap any plane in the aircraft list to see its card: type, airline, route, altitude, speed and a photo from Planespotters.net. When a plane passes close overhead, the card pops up by itself.
 
@@ -119,7 +121,8 @@ Aircraft data: [adsb.lol](https://adsb.lol), [airplanes.live](https://airplanes.
 
 | Version | Date | Changes |
 |---|---|---|
-| **v1.1.6** | October 21, 2026 | When the app starts it checks GitHub for an update. If there is one, a box shows what's new and offers **Restart and update** or **Later**. A board left running checks every 6 hours. |
+| **v1.1.7** | October 21, 2026 | The bottom menu slides away after 30 seconds without mouse, touch or keyboard use, and comes back when you move the mouse or touch the screen. The mouse pointer hides after 15 seconds (was 60). |
+| v1.1.6 | October 21, 2026 | When the app starts it checks GitHub for an update. If there is one, a box shows what's new and offers **Restart and update** or **Later**. A board left running checks every 6 hours. |
 | v1.1.5 | October 21, 2026 | Weather screen: the right side now shows current conditions (wind, gusts, humidity, rain chance, UV, pressure, visibility, sunrise and sunset), the next 12 hours and a 7-day forecast under the warnings. Moon icons at night. |
 | v1.1.4 | October 21, 2026 | Check for updates now finds the newest zip on this GitHub page. |
 | v1.1.3 | October 21, 2026 | Added the full-screen button in the bottom bar (or press F). |
