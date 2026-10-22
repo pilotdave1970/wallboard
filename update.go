@@ -226,6 +226,9 @@ func relaunch(stop func()) func(extra ...string) error {
 			args = append(args, a)
 		}
 		args = append(args, fmt.Sprintf("--browser-pid=%d", browserPID))
+		if activePort > 0 {
+			args = append(args, fmt.Sprintf("--port=%d", activePort)) // stay on the port the board window is using
+		}
 		args = append(args, extra...)
 		// The new version waits for the port, so start it first: if it won't start, nothing is lost.
 		if err := exec.Command(exe, args...).Start(); err != nil {

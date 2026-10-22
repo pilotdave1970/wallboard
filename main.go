@@ -492,6 +492,26 @@ func setupDataDir() error {
 	return nil
 }
 
+var activePort int
+
+// boardURL uses 127.0.0.1 rather than "localhost" so the browser never tries IPv6 (::1) first.
+func boardURL(port int) string { return fmt.Sprintf("http://127.0.0.1:%d/", port) }
+
+// isWallboard reports whether the program answering on this port is the wallboard itself
+// (and not some other program that happens to use the same port).
+func isWallboard(port int) bool {
+	resp, err := (&http.Client{Timeout: 2 * time.Second}).Get(boardURL(port) + "api/ping")
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+	var j struct {
+		OK      bool `json:"ok"`
+		Windows bool `json:"windows"`
+	}
+	return resp.StatusCode == 200 && json.NewDecoder(io.LimitReader(resp.Body, 4096)).Decode(&j) == nil && j.OK && j.Windows
+}
+
 func main() {
 	fullscreen := flag.Bool("fullscreen", false, "open full screen")
 	lan := flag.Bool("lan", false, "let other devices on the home network open the board")
@@ -513,28 +533,38 @@ func main() {
 	if settingBool("pcLan") {
 		*lan = true
 	}
-	u := fmt.Sprintf("http://localhost:%d/", *port)
 	host := "127.0.0.1"
 	if *lan {
 		host = "0.0.0.0"
 	}
-	ln, err := net.Listen("tcp", fmt.Sprintf("%s:%d", host, *port))
-	for i := 0; err != nil && updated && i < 60; i++ { // after an update, wait for the old version to let go
-		time.Sleep(250 * time.Millisecond)
-		ln, err = net.Listen("tcp", fmt.Sprintf("%s:%d", host, *port))
-	}
-	if err != nil {
-		// Already running? Then just open another window onto it.
-		if resp, e := (&http.Client{Timeout: 2 * time.Second}).Get(u + "api/ping"); e == nil {
-			resp.Body.Close()
+	// Find our port. If another program already uses it, move on to the next free one
+	// (8088, 8089, ... 8107). If the wallboard itself is already running there, just open a window.
+	var ln net.Listener
+	var err error
+	for try := 0; try < 20; try++ {
+		p := *port + try
+		ln, err = net.Listen("tcp", fmt.Sprintf("%s:%d", host, p))
+		for i := 0; err != nil && updated && try == 0 && i < 60; i++ { // after an update, wait for the old version to let go
+			time.Sleep(250 * time.Millisecond)
+			ln, err = net.Listen("tcp", fmt.Sprintf("%s:%d", host, p))
+		}
+		if err == nil {
+			*port = p
+			break
+		}
+		if isWallboard(p) {
 			if !*noWindow {
-				openBoard(u, *fullscreen)
+				openBoard(boardURL(p), *fullscreen)
 			}
 			return
 		}
-		messageBox("Jet's Wallboard", fmt.Sprintf("Port %d is being used by another program.\nStart it with --port 9000 (or another number) instead.", *port))
+	}
+	if err != nil {
+		messageBox("Jet's Wallboard", fmt.Sprintf("Couldn't find a free port between %d and %d.\nStart it with --port 9000 (or another number) instead.", *port, *port+19))
 		return
 	}
+	activePort = *port
+	u := boardURL(*port)
 	srv := &http.Server{Handler: handler(*lan, *port)}
 	go srv.Serve(ln)
 	restartFn = relaunch(func() { srv.Close() })
