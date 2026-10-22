@@ -2285,6 +2285,11 @@ if(SERVER&&!SAVED.weather&&!SAVED.home) setTimeout(()=>{
 $("#upd-check").addEventListener("click",checkUpdate);
 $("#upd-install").addEventListener("click",installUpdate);
 
+/* ---------- keep the Windows helper running while this page is open ---------- */
+if(SERVER){
+  setInterval(()=>fetch("/api/ping",{cache:"no-store"}).catch(()=>{}),20000);
+  addEventListener("pagehide",()=>{try{navigator.sendBeacon("/api/bye");}catch(e){}});
+}
 /* ---------- This PC (Windows app) ---------- */
 async function drawPC(){
   try{const j=await (await fetch("/api/pc",{cache:"no-store"})).json();

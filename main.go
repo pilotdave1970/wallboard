@@ -465,7 +465,7 @@ func openBoard(u string, fullscreen bool) bool {
 		return false
 	}
 	browserPID = cmd.Process.Pid
-	cmd.Wait()
+	go cmd.Wait() // don't wait on it: Edge may hand the window to an Edge that's already running
 	return true
 }
 
@@ -565,7 +565,7 @@ func main() {
 	}
 	activePort = *port
 	u := boardURL(*port)
-	srv := &http.Server{Handler: handler(*lan, *port)}
+	srv := &http.Server{Handler: track(handler(*lan, *port))}
 	go srv.Serve(ln)
 	restartFn = relaunch(func() { srv.Close() })
 	quitFn = func() { srv.Close(); os.Exit(0) }
@@ -574,26 +574,11 @@ func main() {
 		select {}
 	}
 	if updated {
-		// Keep the window that was already open; quit when it closes.
+		// The board window that was already open just carries on with the new version.
 		browserPID = *pid
-		if *pid > 0 {
-			p, err := os.FindProcess(*pid)
-			if err != nil {
-				openBoard(u, *fullscreen) // the window is gone; open a new one
-				return
-			}
-			if _, err := p.Wait(); err != nil {
-				for { // couldn't watch it directly; check now and then
-					time.Sleep(5 * time.Second)
-					if _, err := os.FindProcess(*pid); err != nil {
-						return
-					}
-				}
-			}
-			return
-		}
-	} else if openBoard(u, *fullscreen) {
-		return
+	} else {
+		openBoard(u, *fullscreen)
 	}
-	messageBox("Jet's Wallboard", "Microsoft Edge or Google Chrome wasn't found, so the board opened in your default browser.\n\nKeep this message open while you use the board; click OK to close the wallboard helper.")
+	waitUntilClosed()
+	srv.Close()
 }
