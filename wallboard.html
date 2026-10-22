@@ -137,6 +137,7 @@ button:active{transform:scale(.97)}
 .air .ac .cs{font-size:clamp(10px,calc(var(--ac-row,28px)*.6),16px)}
 .air #ac-list{overflow-y:auto;scrollbar-width:none;min-height:0}
 .air .list{display:flex;flex-direction:column}
+.ac[data-hex]{cursor:pointer}.ac[data-hex]:hover{background:var(--tile)}
 .ac.hdr{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding-block:0;background:none}
 .cal-list{display:flex;flex-direction:column;gap:12px;overflow:auto;min-height:0;scrollbar-width:none}
 .cal-day{display:flex;flex-direction:column;gap:6px}
@@ -600,12 +601,12 @@ body.kb-open nav,body.kb-open .alert-banner,body.kb-open .theme-tray{display:non
             <label class="field"><span>Longitude</span><input id="s-lon" class="kbd" type="text" inputmode="none" autocomplete="off" autocorrect="off" spellcheck="false"></label>
           </div>
         </div>
-        <div class="field"><span>Is your ADS-B receiver at this place too?</span><div class="range" id="s-same"><button data-v="1">Yes</button><button data-v="0">No, somewhere else</button></div></div>
+        <div class="field"><span>Center the flight radar and overhead alerts on this place too?</span><div class="range" id="s-same"><button data-v="1">Yes</button><button data-v="0">No, somewhere else</button></div></div>
         <div class="card" id="s-home">
-          <p class="hint" style="margin:0">The flight radar is centered on your receiver.</p>
+          <p class="hint" style="margin:0">Usually your house (or your ADS-B receiver, if you have one). Overhead alerts pop up when a plane passes close to this spot.</p>
           <div class="frow">
-            <label class="field"><span>Receiver latitude</span><input id="s-hlat" class="kbd" type="text" inputmode="none" autocomplete="off" autocorrect="off" spellcheck="false"></label>
-            <label class="field"><span>Receiver longitude</span><input id="s-hlon" class="kbd" type="text" inputmode="none" autocomplete="off" autocorrect="off" spellcheck="false"></label>
+            <label class="field"><span>Radar center latitude</span><input id="s-hlat" class="kbd" type="text" inputmode="none" autocomplete="off" autocorrect="off" spellcheck="false"></label>
+            <label class="field"><span>Radar center longitude</span><input id="s-hlon" class="kbd" type="text" inputmode="none" autocomplete="off" autocorrect="off" spellcheck="false"></label>
           </div>
         </div>
         <div class="save-bar"><button class="btn primary wide" id="s-loc-save">Save location</button><span class="msg" id="s-loc-msg"></span></div>
@@ -677,12 +678,22 @@ body.kb-open nav,body.kb-open .alert-banner,body.kb-open .theme-tray{display:non
 
       <div class="sec" data-sec="air" hidden>
         <h2>Flights</h2>
+        <div class="field"><span>Where the aircraft come from</span><div class="range" id="f-src"><button data-v="online">Online (no receiver needed)</button><button data-v="receiver">My ADS-B receiver</button></div></div>
+        <div class="card" id="f-online">
+          <p class="hint" style="margin:0">Live aircraft from a free community ADS-B network, shown around your radar center (set in <b>Location</b>). No Raspberry Pi or antenna needed. For personal, non-commercial use.</p>
+          <div class="field"><span>Online service</span><div class="range" id="f-prov"><button data-v="adsb.lol">adsb.lol</button><button data-v="airplanes.live">airplanes.live</button><button data-v="adsb.fi">adsb.fi</button></div></div>
+          <p class="hint" style="margin:0">If one service is slow or down, pick another. Data from <a href="https://adsb.lol" target="_blank">adsb.lol</a> (ODbL), <a href="https://airplanes.live" target="_blank">airplanes.live</a> or <a href="https://adsb.fi" target="_blank">adsb.fi</a>.</p>
+          <div class="save-bar"><button class="btn" id="f-online-test">Test</button></div>
+        </div>
+        <div class="card" id="f-recv">
         <p class="hint">The address of your receiver's aircraft data. For tar1090 it usually ends in <b>/tar1090/data/aircraft.json</b>; for dump1090-fa, <b>/dump1090-fa/data/aircraft.json</b>. If the receiver is on another computer, use that computer's address, for example http://192.168.50.20/tar1090/data/aircraft.json.</p>
-        <div class="frow">
-          <label class="field" style="flex-basis:260px"><span>Receiver data address</span><input id="s-adsb" class="kbd" type="text" inputmode="none" autocomplete="off" autocorrect="off" spellcheck="false" data-enter="s-adsb-test"></label>
-          <button class="btn" id="s-adsb-test">Test</button>
+          <div class="frow">
+            <label class="field" style="flex-basis:260px"><span>Receiver data address</span><input id="s-adsb" class="kbd" type="text" inputmode="none" autocomplete="off" autocorrect="off" spellcheck="false" data-enter="s-adsb-test"></label>
+            <button class="btn" id="s-adsb-test">Test</button>
+          </div>
         </div>
         <span class="msg" id="s-adsb-msg"></span>
+
         <div class="field"><span>Radar range when the board starts</span><div class="range" id="s-range"><button data-v="10">10 nm</button><button data-v="25">25 nm</button><button data-v="50">50 nm</button></div></div>
         <div class="field"><span>Aircraft listed on Home and the Flights screen</span><div class="range" id="f-list"><button data-v="6">6</button><button data-v="10">10</button><button data-v="14">14</button></div></div>
         <div class="field"><span>Aircraft colors</span><div class="range" id="f-colors"><button data-v="altitude">By altitude</button><button data-v="one">One color</button></div></div>
@@ -694,7 +705,7 @@ body.kb-open nav,body.kb-open .alert-banner,body.kb-open .theme-tray{display:non
         <div class="field"><span>Only show aircraft below</span><div class="range" id="f-alt"><button data-v="0">Any height</button><button data-v="20000">20,000 ft</button><button data-v="10000">10,000 ft</button></div></div>
         <div class="card">
           <h3>Overhead alert</h3>
-          <p class="hint" style="margin:0">A card pops up when a plane passes close over your house, with its type, airline, route and a photo. Each plane alerts once per pass.</p>
+          <p class="hint" style="margin:0">A card pops up when a plane passes close over your radar center, with its type, airline, route and a photo from Planespotters.net. Each plane alerts once per pass. You can also tap any plane in the aircraft list to see its card.</p>
           <div class="field"><span>Overhead alert</span><div class="range" id="o-on"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
           <div class="field"><span>How close</span><div class="range" id="o-rad"><button data-v="0.75">¾ nm</button><button data-v="1.5">1½ nm</button><button data-v="3">3 nm</button><button data-v="5">5 nm</button></div></div>
           <div class="field"><span>Only planes below</span><div class="range" id="o-alt"><button data-v="5000">5,000 ft</button><button data-v="10000">10,000 ft</button><button data-v="20000">20,000 ft</button><button data-v="0">Any height</button></div></div>
@@ -816,6 +827,8 @@ const CONFIG = {
   radar: { zoom: 7, color: 2, speed: 650, smooth: true, snow: true, opacity: 0.8, frames: 6, basemap: true },  // frames: 6 = the last hour
   alerts: { enabled: true, banner: true }, // US National Weather Service warnings
   adsbUrl: "http://piaware.local/skyaware/data/aircraft.json",  // your ADS-B receiver Pi (change in settings if yours differs)
+  adsbSource: "online",                    // "online" (no receiver needed) or "receiver"
+  adsbOnline: "adsb.lol",                  // online service: "adsb.lol", "airplanes.live" or "adsb.fi"
   radarRangeNm: 25,
   flights: { listMax: 14, labels: true, hideGround: true, maxAltFt: 0, map: "auto", mapDim: 0.7, airports: true, colors: "altitude" },  // colors: "altitude" or "one"  // map: auto, streets, topo, sat or off  // maxAltFt 0 = any height
   overhead: { enabled: true, radiusNm: 1.5, maxAltFt: 10000, seconds: 20, photos: true, quietAtNight: true },  // pop-up when a plane passes over
@@ -853,8 +866,10 @@ function saveSettings(patch){
 // The Pi opens the board as localhost; anything else (your PC) is a remote screen.
 const IS_PI=SERVER&&/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname), REMOTE=SERVER&&!IS_PI;
 const MERGED=["home","weather","clock","radar","alerts","flights","nightDim","calendar","overhead"];
-for(const k of ["home","weather","units","clock","radar","alerts","adsbUrl","radarRangeNm","flights","overhead","nightDim","idleMinutes","idleScreen","mirror","burnIn","people","calendars","calendar","events","colors","clockPics"])
+for(const k of ["home","weather","units","clock","radar","alerts","adsbUrl","adsbSource","adsbOnline","radarRangeNm","flights","overhead","nightDim","idleMinutes","idleScreen","mirror","burnIn","people","calendars","calendar","events","colors","clockPics"])
   if(SAVED[k]!==undefined&&SAVED[k]!==null) CONFIG[k]=MERGED.includes(k)?{...CONFIG[k],...SAVED[k]}:SAVED[k];
+// Boards set up before the online option existed keep using their receiver.
+if(SAVED.adsbSource==null&&SAVED.adsbUrl) CONFIG.adsbSource="receiver";
 const HOME = CONFIG.home, WX = CONFIG.weather;
 // On the Pi (file:// or a LAN address) the board never shows sample data: it waits and retries.
 const ON_PI = SERVER || location.protocol==="file:" || /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|[^.]+$)|\.local$/.test(location.hostname);
@@ -1004,13 +1019,15 @@ function sampleTraffic(){
   }
   return {aircraft:sampleAc,_sample:true};
 }
-let traffic=[], trafficSample=!ON_PI, trafficOffline=false;
+let traffic=[], trafficSample=!ON_PI, trafficOffline=false, trafficSrc="live";
+const ONLINE=()=>CONFIG.adsbSource==="online";
+function adsbAddr(){ return SERVER?`/api/adsb?lat=${HOME.lat}&lon=${HOME.lon}&r=${Math.round(Math.min(250,Math.max(30,CONFIG.radarRangeNm*1.5)))}`:CONFIG.adsbUrl; }
 async function loadTraffic(){
   let j;
-  try{const r=await fetch(SERVER?"/api/adsb":CONFIG.adsbUrl,{cache:"no-store"});if(!r.ok)throw 0;j=await r.json();}
-  catch(e){ if(ON_PI){ trafficOffline=true; setChip("#ac-src","no receiver"); return; } j=sampleTraffic(); }
+  try{const r=await fetch(adsbAddr(),{cache:"no-store"});if(!r.ok)throw 0;j=await r.json();}
+  catch(e){ if(ON_PI){ trafficOffline=true; setChip("#ac-src",ONLINE()?"offline":"no receiver"); return; } j=sampleTraffic(); }
   trafficOffline=false;
-  trafficSample=!!j._sample;
+  trafficSample=!!j._sample; trafficSrc=j.source||"live";
   const F=CONFIG.flights;
   traffic=(j.aircraft||[]).filter(a=>a.lat!=null&&a.lon!=null&&(a.seen==null||a.seen<60))
     .filter(a=>!(F.hideGround&&a.alt_baro==="ground")&&!(F.maxAltFt&&typeof a.alt_baro==="number"&&a.alt_baro>F.maxAltFt))
@@ -1041,11 +1058,11 @@ function acColor(a){
 }
 function acRows(list){
   return `<div class="ac hdr"><span>Flight</span><span>Alt ft</span><span>Spd kt</span><span>Dist</span></div>`+
-    list.map(a=>`<div class="ac"><span class="cs"${acColor(a)?` style="color:${acColor(a)}"`:""}>${a.cs}</span><b class="num">${a.alt_baro==="ground"?"GND":(a.alt_baro??"—").toLocaleString()}</b><b class="num">${a.gs!=null?Math.round(a.gs):"—"}</b><span class="num">${a.d.toFixed(1)} nm</span></div>`).join("");
+    list.map(a=>`<div class="ac" data-hex="${esc(a.hex||"")}" title="Show this aircraft"><span class="cs"${acColor(a)?` style="color:${acColor(a)}"`:""}>${a.cs}</span><b class="num">${a.alt_baro==="ground"?"GND":(a.alt_baro??"—").toLocaleString()}</b><b class="num">${a.gs!=null?Math.round(a.gs):"—"}</b><span class="num">${a.d.toFixed(1)} nm</span></div>`).join("");
 }
 function renderTraffic(){
   $("#alt-key").hidden=CONFIG.flights.colors==="one";
-  if(trafficOffline) setChip("#ac-src","no receiver"); else setChip("#ac-src",trafficSample?"sample":"live",trafficSample?"sample":"live");
+  if(trafficOffline) setChip("#ac-src",ONLINE()?"offline":"no receiver"); else setChip("#ac-src",trafficSample?"sample":trafficSrc,trafficSample?"sample":"live");
   const inRange=traffic.filter(a=>a.d<=CONFIG.radarRangeNm);
   $("#ac-count").textContent=inRange.length;
   // Home lists exactly the number set (6, 10 or 14); rows shrink to fit the panel
@@ -1652,7 +1669,7 @@ const SWATCH=["#ffb547","#5fd4e6","#7ad38a","#c79bff","#ff7a8a","#4fb3ff","#e6c4
 // [control id, setting path, type (b=on/off, n=number, s=text), section]
 const SEGS=[["w-units","units","s","wx"],["w-zoom","radar.zoom","s","wx"],["w-speed","radar.speed","n","wx"],["w-frames","radar.frames","n","wx"],["w-base","radar.basemap","b","wx"],["w-op","radar.opacity","n","wx"],
   ["w-smooth","radar.smooth","b","wx"],["w-snow","radar.snow","b","wx"],["w-alerts","alerts.enabled","b","wx"],["w-banner","alerts.banner","b","wx"],
-  ["s-range","radarRangeNm","n","air"],["f-list","flights.listMax","n","air"],["f-labels","flights.labels","b","air"],["f-ground","flights.hideGround","b","air"],["f-alt","flights.maxAltFt","n","air"],["f-map","flights.map","s","air"],["f-mapdim","flights.mapDim","n","air"],["f-apt","flights.airports","b","air"],["f-colors","flights.colors","s","air"],["o-on","overhead.enabled","b","air"],["o-rad","overhead.radiusNm","n","air"],["o-alt","overhead.maxAltFt","n","air"],["o-sec","overhead.seconds","n","air"],["o-photo","overhead.photos","b","air"],["o-night","overhead.quietAtNight","b","air"],
+  ["s-range","radarRangeNm","n","air"],["f-src","adsbSource","s","air"],["f-prov","adsbOnline","s","air"],["f-list","flights.listMax","n","air"],["f-labels","flights.labels","b","air"],["f-ground","flights.hideGround","b","air"],["f-alt","flights.maxAltFt","n","air"],["f-map","flights.map","s","air"],["f-mapdim","flights.mapDim","n","air"],["f-apt","flights.airports","b","air"],["f-colors","flights.colors","s","air"],["o-on","overhead.enabled","b","air"],["o-rad","overhead.radiusNm","n","air"],["o-alt","overhead.maxAltFt","n","air"],["o-sec","overhead.seconds","n","air"],["o-photo","overhead.photos","b","air"],["o-night","overhead.quietAtNight","b","air"],
   ["c-size","clock.size","n","clk"],["c-align","clock.align","s","clk"],["c-24","clock.hour24","b","disp"],["c-sec","clock.seconds","b","disp"],["c-sun","clock.sun","b","disp"],["s-dim","nightDim.enabled","b","disp"],
   ["d-idle","idleMinutes","n","disp"],["d-idlescr","idleScreen","s","main"],["b-mirror","mirror","b","mir"],["d-burn","burnIn","b","disp"],["cal-days","calendar.daysHome","n","cal"],["cal-view","calendar.view","s","cal"]];
 const getPath=p=>p.split(".").reduce((o,k)=>o==null?o:o[k],CONFIG);
@@ -1699,7 +1716,7 @@ function openSettings(){
     `<button class="sw" data-theme="${k}" aria-pressed="${k===theme}" style="--sb:${bg};--sa:${a};--sc:${c}"><span class="dot"></span>${n}</button>`).join("");
   dimFrom=CONFIG.nightDim.from; dimTo=CONFIG.nightDim.to; drawDim(); drawScreens(); drawColors(); drawClockPic();
   // Flights
-  $("#s-adsb").value=CONFIG.adsbUrl; say("s-adsb-msg","");
+  $("#s-adsb").value=CONFIG.adsbUrl; say("s-adsb-msg",""); showSrc(CONFIG.adsbSource);
   // Calendar
   const names=Object.keys(CONFIG.people); if(!names.includes(draft.who))draft.who=names[0]||""; if(!names.includes(gWho))gWho=names[0]||"";
   whoChips("e-who",draft.who); whoChips("g-who",gWho);
@@ -1783,7 +1800,7 @@ function addCalendar(){
 function saveSection(sec){
   const patch=segPatch(sec);
   if(sec==="disp")patch.nightDim={...patch.nightDim,from:dimFrom,to:dimTo};
-  if(sec==="air"){const u=val("s-adsb");if(!u)return say("m-air","The receiver address can't be empty.","bad");patch.adsbUrl=u;}
+  if(sec==="air"&&patch.adsbSource==="receiver"){const u=val("s-adsb");if(!u)return say("m-air","The receiver address can't be empty.","bad");patch.adsbUrl=u;}
   const unitsChanged=patch.units&&patch.units!==CONFIG.units, alertsChanged=JSON.stringify(patch.alerts)!==JSON.stringify(CONFIG.alerts);
   Object.assign(CONFIG,patch);
   saveSettings(patch).then(ok=>say("m-"+sec,ok?"Saved.":"Saved here, but couldn't reach the settings file.",ok?"ok":"bad"));
@@ -1797,6 +1814,7 @@ $("#settings").addEventListener("click",e=>{
   if(b.classList.contains("set-tab"))return showSection(b.dataset.sec);
   const r=b.closest(".range"); if(r&&b.dataset.v!==undefined){seg(r.id,b.dataset.v);
     if(r.id==="s-same")$("#s-home").hidden=b.dataset.v==="1";
+    if(r.id==="f-src"){showSrc(b.dataset.v);say("s-adsb-msg","");}
     if(r.id==="s-dim")drawDim();
     if(r.id==="b-mirror"){const p=segPatch("mir");Object.assign(CONFIG,p);saveSettings(p);}
     if(r.id==="d-idlescr"){const p=segPatch("main");Object.assign(CONFIG,p);saveSettings(p);resetIdle();}
@@ -1846,6 +1864,7 @@ $("#settings").addEventListener("click",e=>{
     case "s-search-go": return searchPlace();
     case "s-loc-save": return saveLocation();
     case "s-adsb-test": return testAdsb();
+    case "f-online-test": return testOnline();
     case "s-reload": return location.reload();
     case "s-reset":
       if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="Tap again to reset";say("s-reset-msg","This can't be undone.","bad");return;}
@@ -1875,16 +1894,29 @@ function saveLocation(){
   if(lat===null||lon===null)return say("s-loc-msg","Latitude must be between -90 and 90, and longitude between -180 and 180.","bad");
   let home={lat,lon};
   if(segVal("s-same")==="0"){const hl=readCoord("s-hlat",90),hn=readCoord("s-hlon",180);
-    if(hl===null||hn===null)return say("s-loc-msg","Check the receiver latitude and longitude.","bad"); home={lat:hl,lon:hn};}
+    if(hl===null||hn===null)return say("s-loc-msg","Check the radar center latitude and longitude.","bad"); home={lat:hl,lon:hn};}
   say("s-loc-msg","Saved. Restarting the board…","ok");
   saveSettings({weather:{place,lat,lon},home}).then(()=>setTimeout(()=>location.reload(),400));
+}
+function showSrc(v){ $("#f-online").hidden=v!=="online"; $("#f-recv").hidden=v==="online"; }
+async function testOnline(){
+  const prov=segVal("f-prov")||"adsb.lol";
+  if(!SERVER)return say("s-adsb-msg","Online aircraft need the wallboard app (JetsWallboard.exe) or the Pi helper.","bad");
+  say("s-adsb-msg",`Asking ${prov}…`);
+  const ctl=new AbortController(); const to=setTimeout(()=>ctl.abort(),12000);
+  try{await saveSettings({adsbSource:"online",adsbOnline:prov}); CONFIG.adsbSource="online"; CONFIG.adsbOnline=prov;
+    const r=await fetch(adsbAddr(),{cache:"no-store",signal:ctl.signal}); if(!r.ok)throw new Error(await r.text());
+    const j=await r.json(), n=(j.aircraft||[]).length;
+    say("s-adsb-msg",`It works. ${prov} shows ${n} aircraft near ${WX.place&&near(HOME.lat,WX.lat)&&near(HOME.lon,WX.lon)?WX.place:"your radar center"} right now.`,"ok"); loadTraffic();}
+  catch(e){say("s-adsb-msg",`Couldn't get aircraft from ${prov}${e&&e.message?": "+e.message.slice(0,120):""}. Try another service.`,"bad");}
+  finally{clearTimeout(to);}
 }
 async function testAdsb(){
   const url=val("s-adsb"); if(!url)return say("s-adsb-msg","Type the address first.","bad");
   say("s-adsb-msg","Checking…"); closeKb();
   const ctl=new AbortController(); const to=setTimeout(()=>ctl.abort(),6000);
   try{let r;
-    if(SERVER){await saveSettings({adsbUrl:url}); CONFIG.adsbUrl=url; r=await fetch("/api/adsb",{cache:"no-store",signal:ctl.signal});}
+    if(SERVER){await saveSettings({adsbUrl:url,adsbSource:"receiver"}); CONFIG.adsbUrl=url; CONFIG.adsbSource="receiver"; r=await fetch(adsbAddr(),{cache:"no-store",signal:ctl.signal});}
     else r=await fetch(url,{cache:"no-store",signal:ctl.signal});
     if(!r.ok)throw 0; const j=await r.json();
     say("s-adsb-msg",`It works. The receiver is seeing ${(j.aircraft||[]).length} aircraft right now.`,"ok");}
@@ -2086,6 +2118,7 @@ async function lookupAircraft(a){
   return info;
 }
 function nextOverhead(){
+  if(ovhNow&&ovhNow===ovhPicked)ovhPicked=null;
   clearTimeout(ovhTimer); ovhNow=null;
   while(ovhQueue.length){const hx=ovhQueue.shift(); if(traffic.some(t=>t.hex===hx)||hx==="test"){ovhNow=hx;break;}}
   if(!ovhNow){$("#ovh").hidden=true;return;}
@@ -2109,7 +2142,7 @@ function drawOverhead(fresh){
       <div class="ovh-credit">Photo © ${esc(p.photographer||"")} · <a href="${esc(p.link)}" target="_blank">Planespotters.net</a></div>`:"";
   const dir=COMPASS[Math.round(((a.b||0)%360)/45)%8];
   $("#ovh-card").style.setProperty("--ovc",c);
-  $("#ovh-card").innerHTML=`<div class="ovh-tag"><i></i>${hx==="test"?"Test alert":"Overhead now"}</div>
+  $("#ovh-card").innerHTML=`<div class="ovh-tag"><i></i>${hx==="test"?"Test alert":hx===ovhPicked?"Selected aircraft":"Overhead now"}</div>
     <div><div class="ovh-cs">${esc(cs)}</div><div class="ovh-type">${esc(type||"Aircraft")}${reg&&reg!==cs?` · ${esc(reg)}`:""}</div><div class="ovh-sub">${esc(owner)}${!info.done?(owner?" · ":"")+"looking up…":""}</div></div>
     <button class="ovh-x" id="ovh-close" aria-label="Close">${ICON_X}</button>
     ${route}
@@ -2121,7 +2154,15 @@ function drawOverhead(fresh){
   else{const bar=$("#ovh-card .ovh-bar i");if(bar)bar.style.animationDelay=`-${(Date.now()-(ovhShownAt||Date.now()))/1000}s`;}
   if(fresh)ovhShownAt=Date.now();
 }
-let ovhShownAt=0, ovhTest=null;
+let ovhShownAt=0, ovhTest=null, ovhPicked=null;
+// Tap a plane in the aircraft list to see its card (type, route and Planespotters photo).
+["#ac-list","#ac-list-big"].forEach(sel=>$(sel).addEventListener("click",e=>{
+  const row=e.target.closest(".ac[data-hex]"); if(!row||!row.dataset.hex)return;
+  const a=traffic.find(t=>t.hex===row.dataset.hex); if(!a)return;
+  e.stopPropagation(); ovhNow=null; ovhPicked=a.hex; lookupAircraft(a);
+  const k=ovhQueue.indexOf(a.hex); if(k>=0)ovhQueue.splice(k,1);
+  ovhQueue.unshift(a.hex); nextOverhead();
+}));
 $("#ovh").addEventListener("click",e=>{ if(e.target.closest(".ovh-photo,.ovh-credit a"))return; nextOverhead(); });
 $("#settings").addEventListener("click",e=>{ if(!e.target.closest("#o-test"))return; e.stopPropagation();
   const near=[...traffic].sort((x,y)=>x.d-y.d)[0];
@@ -2228,6 +2269,10 @@ async function installUpdate(){
     say("upd-msg","Installed. Close the board and open it again to finish.","ok");
   }catch(e){ say("upd-msg","The update didn't go through. Try again.","bad"); ins.disabled=false; btn.disabled=false; }
 }
+// First run on a new PC: start by picking the home location.
+if(SERVER&&!SAVED.weather&&!SAVED.home) setTimeout(()=>{
+  const g=document.querySelector('nav [data-view="settings"]'); if(!g)return; g.click(); showSection("loc");
+  say("s-loc-msg","Welcome! Search for your town above, then Save location.","ok"); },900);
 $("#upd-check").addEventListener("click",checkUpdate);
 $("#upd-install").addEventListener("click",installUpdate);
 </script>

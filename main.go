@@ -232,17 +232,7 @@ func handler(lan bool, port int) http.HandlerFunc {
 				}
 				send(w, st, body, ct)
 			case p == "/api/adsb":
-				u, _ := readSettings()["adsbUrl"].(string)
-				u = strings.TrimSpace(u)
-				if u == "" {
-					u = "http://piaware.local/skyaware/data/aircraft.json"
-				}
-				st, body, _ := fetch(u, 1500*time.Millisecond, 4*time.Second)
-				ct := "text/plain"
-				if st == 200 {
-					ct = "application/json"
-				}
-				send(w, st, body, ct)
+				handleAdsb(w, r)
 			case p == "/api/aircraftinfo":
 				hx := hexRe.ReplaceAllString(strings.ToLower(q.Get("hex")), "")
 				cs := csRe.ReplaceAllString(strings.ToUpper(q.Get("cs")), "")
