@@ -273,6 +273,8 @@ nav .tab[aria-selected="true"]{color:var(--fg);background:linear-gradient(180deg
 nav .tab[aria-selected="true"] svg{color:var(--amber)}
 nav .tab.util{flex:0 0 54px}
 nav .tab.util[aria-pressed="true"]{color:var(--amber);background:var(--tile)}
+#fs-btn .fs-out{display:none} #fs-btn[aria-pressed="true"] .fs-in{display:none} #fs-btn[aria-pressed="true"] .fs-out{display:inline}
+.toast-fs{position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:99;padding:10px 16px;border-radius:99px;background:var(--panel,#111);border:1px solid var(--edge);color:var(--fg);font-family:var(--f-mono);font-size:12px;pointer-events:none;transition:opacity .4s}
 .tab .badge{font-family:var(--f-mono);font-size:11px;min-width:20px;height:20px;border-radius:10px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center;background:var(--sev,var(--warn));color:var(--bg);font-weight:600}
 
 /* panels adapt to the size you give them */
@@ -779,7 +781,7 @@ body.kb-open nav,body.kb-open .alert-banner,body.kb-open .theme-tray{display:non
         <div class="card" id="pc-card" hidden>
           <h3>This PC</h3>
           <div class="field"><span>Start the wallboard when Windows starts</span><div class="range" id="pc-start"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
-          <div class="field"><span>Open full screen (F11 switches any time)</span><div class="range" id="pc-full"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
+          <div class="field"><span>Open in full screen (the full-screen button, F or F11 switch any time)</span><div class="range" id="pc-full"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
           <div class="field"><span>Phones and tablets at home can open the board</span><div class="range" id="pc-lan"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
           <span class="msg" id="pc-msg"></span>
         </div>
@@ -818,6 +820,7 @@ body.kb-open nav,body.kb-open .alert-banner,body.kb-open .theme-tray{display:non
     <button class="tab util" role="tab" data-view="settings" aria-selected="false" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M21.2 12h-2.4M5.2 12H2.8M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7M18.5 18.5l-1.7-1.7M7.2 7.2L5.5 5.5"/></svg></button>
     <button class="tab util" id="edit-btn" aria-pressed="false" title="Edit layout" aria-label="Edit layout"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="9" rx="2"/><rect x="13.5" y="3.5" width="7" height="5" rx="2"/><rect x="13.5" y="11.5" width="7" height="9" rx="2"/><rect x="3.5" y="15.5" width="7" height="5" rx="2"/></svg></button>
     <button class="tab util" id="theme-btn" aria-pressed="false" title="Color theme" aria-label="Color theme"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.8-.8 1.8-1.7 0-.5-.2-.9-.5-1.2-.3-.4-.5-.7-.5-1.2 0-1 .8-1.7 1.7-1.7H17a4 4 0 0 0 4-4C21 6.6 17 3 12 3z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor" stroke="none"/><circle cx="10.5" cy="7" r="1.2" fill="currentColor" stroke="none"/><circle cx="15.5" cy="7.5" r="1.2" fill="currentColor" stroke="none"/></svg></button>
+    <button class="tab util" id="fs-btn" aria-pressed="false" title="Full screen" aria-label="Full screen"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path class="fs-in" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/><path class="fs-out" d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
     <button class="tab util" id="dim-btn" aria-pressed="false" title="Night dim" aria-label="Night dim"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>
   </nav>
 </div>
@@ -2206,6 +2209,26 @@ document.querySelectorAll("[data-z]").forEach(b=>b.addEventListener("click",()=>
 $("#radar-play").addEventListener("click",()=>{radar.playing=!radar.playing;$("#radar-play").setAttribute("aria-pressed",radar.playing);$("#radar-play").textContent=radar.playing?"PAUSE":"PLAY";});
 $("#radar-scrub").addEventListener("click",e=>{const i=[...$("#radar-scrub").children].indexOf(e.target);if(i>=0){radar.playing=false;$("#radar-play").setAttribute("aria-pressed",false);$("#radar-play").textContent="PLAY";showFrame(i);}});
 let manualDim=null;
+/* ---------- full screen ---------- */
+// Full screen from the button (or the F key). The browser's own full screen (F11, or the
+// "Open full screen" setting) counts too; a page can't leave that one, so it tells you to press F11.
+const browserFull=()=>!document.fullscreenElement&&Math.abs(innerHeight-screen.height)<2&&Math.abs(innerWidth-screen.width)<2;
+const isFull=()=>!!document.fullscreenElement||browserFull();
+function drawFs(){ $("#fs-btn").setAttribute("aria-pressed",isFull()); $("#fs-btn").title=isFull()?"Leave full screen":"Full screen"; }
+function fsToast(t){ let el=$(".toast-fs"); if(!el){el=document.createElement("div");el.className="toast-fs";document.body.appendChild(el);}
+  el.textContent=t; el.style.opacity=1; clearTimeout(fsToast.t); fsToast.t=setTimeout(()=>el.style.opacity=0,2600); }
+async function toggleFs(){
+  const on=!isFull();
+  try{
+    if(on){ await document.documentElement.requestFullscreen({navigationUI:"hide"}); fsToast("Full screen. Tap the button or press Esc to leave."); }
+    else if(document.fullscreenElement) await document.exitFullscreen();
+    else { fsToast("Press F11 to leave full screen."); return; }
+  }catch(e){ fsToast("Press F11 for full screen."); return; }
+  if(SERVER) fetch("/api/pc",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fullscreen:on})}).then(()=>{ if(!$("#pc-card").hidden)seg("pc-full",on?1:0); }).catch(()=>{});
+}
+$("#fs-btn").addEventListener("click",toggleFs);
+document.addEventListener("fullscreenchange",drawFs); addEventListener("resize",drawFs); drawFs();
+document.addEventListener("keydown",e=>{ if((e.key==="f"||e.key==="F")&&!e.ctrlKey&&!e.altKey&&!e.metaKey&&!/^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName||""))&&$("#settings").hidden){ e.preventDefault(); toggleFs(); } });
 $("#dim-btn").addEventListener("click",()=>{const on=!$("#app").classList.contains("dim");manualDim=on;$("#app").classList.toggle("dim",on);$("#dim-btn").setAttribute("aria-pressed",on);});
 function autoDim(d){ if(manualDim!==null)return; if(CONFIG.nightDim.enabled===false){$("#app").classList.remove("dim");$("#dim-btn").setAttribute("aria-pressed",false);return;} const h=d.getHours(),{from,to}=CONFIG.nightDim;
   const on=from>to?(h>=from||h<to):(h>=from&&h<to); $("#app").classList.toggle("dim",on); $("#dim-btn").setAttribute("aria-pressed",on);}
@@ -2297,7 +2320,7 @@ async function drawPC(){
 }
 async function setPC(id,on){
   const key={"pc-start":"startup","pc-full":"fullscreen","pc-lan":"lan"}[id];
-  if(key==="fullscreen"){ try{ if(on&&!document.fullscreenElement)document.documentElement.requestFullscreen(); else if(!on&&document.fullscreenElement)document.exitFullscreen(); }catch(e){} }
+  if(key==="fullscreen"){ try{ if(on&&!isFull())document.documentElement.requestFullscreen({navigationUI:"hide"}); else if(!on&&document.fullscreenElement)document.exitFullscreen(); else if(!on&&browserFull())fsToast("Press F11 to leave full screen."); }catch(e){} }
   try{const r=await fetch("/api/pc",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({[key]:on})});
     if(!r.ok)throw new Error(await r.text()); const j=await r.json();
     if(j.restarting){ say("pc-msg","Restarting the helper…","ok");
