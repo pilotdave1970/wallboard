@@ -5,8 +5,9 @@ package main
 //   GET  /api/update/check    -> {current, latest, available, notes, url, ready}
 //   POST /api/update/install  -> downloads the new JetsWallboard.exe, swaps it in, restarts the helper.
 //
-// The board window stays open: the new helper takes over the same port and keeps watching
-// the same browser window, and the page reloads itself once the new version answers.
+// Each release carries one file, JetsWallboardSetup.exe. Installing an update downloads it and
+// runs it silently; the new version takes over the same port and keeps watching the same
+// browser window, and the page reloads itself once the new version answers.
 
 import (
 	"encoding/json"
@@ -16,7 +17,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -27,7 +27,7 @@ import (
 var Version = "dev"
 
 const repo = "pilotdave1970/wallboard"
-const assetName = "JetsWallboard.exe"
+const assetName = "JetsWallboardSetup.exe"
 
 type release struct {
 	Tag    string `json:"tag_name"`
@@ -48,6 +48,7 @@ var (
 	exePath    string                      // where the program file lives, read once at startup (before any update renames it)
 	browserPID int                         // the board window's browser process, handed to the next version
 	restartFn  func(extra ...string) error // set in main
+	quitFn     func()                      // set in main
 )
 
 func latestRelease() (*release, error) {
@@ -158,12 +159,7 @@ func handleUpdateInstall(w http.ResponseWriter, r *http.Request) {
 		fail(409, "GitHub is still building "+rel.Tag+". Try again in a couple of minutes.")
 		return
 	}
-	exe := exePath
-	if exe == "" {
-		fail(500, "Couldn't find the program file.")
-		return
-	}
-	newPath, oldPath := exe+".new", exe+".old"
+	setup := filepath.Join(os.TempDir(), "JetsWallboardSetup-"+strings.TrimPrefix(rel.Tag, "v")+".exe")
 
 	req, _ := http.NewRequest("GET", u, nil)
 	req.Header.Set("User-Agent", ua)
@@ -177,34 +173,29 @@ func handleUpdateInstall(w http.ResponseWriter, r *http.Request) {
 		fail(502, fmt.Sprintf("Download failed: GitHub answered %d", resp.StatusCode))
 		return
 	}
-	f, err := os.Create(newPath)
+	f, err := os.Create(setup)
 	if err != nil {
-		fail(500, "Can't write next to the program ("+err.Error()+"). Move the JetsWallboard folder somewhere you can save files, like Documents.")
+		fail(500, "Couldn't save the update: "+err.Error())
 		return
 	}
 	n, err := io.Copy(f, io.LimitReader(resp.Body, 200<<20))
 	f.Close()
 	head := make([]byte, 2)
-	if hf, e := os.Open(newPath); e == nil {
+	if hf, e := os.Open(setup); e == nil {
 		hf.Read(head)
 		hf.Close()
 	}
-	if err != nil || (size > 0 && n != size) || (runtime.GOOS == "windows" && string(head) != "MZ") {
-		os.Remove(newPath)
+	if err != nil || (size > 0 && n != size) || string(head) != "MZ" {
+		os.Remove(setup)
 		fail(502, "The download didn't finish properly. Try again.")
 		return
 	}
-	os.Chmod(newPath, 0o755)
-	// Windows lets a running .exe be renamed, just not overwritten.
-	os.Remove(oldPath)
-	if err := os.Rename(exe, oldPath); err != nil {
-		os.Remove(newPath)
-		fail(500, "Couldn't replace the program: "+err.Error())
-		return
-	}
-	if err := os.Rename(newPath, exe); err != nil {
-		os.Rename(oldPath, exe)
-		fail(500, "Couldn't replace the program: "+err.Error())
+	// Run the installer quietly. It closes this helper, installs, and starts the new version,
+	// which takes over the board window that's already open.
+	args := []string{"/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-", "/update=1",
+		fmt.Sprintf("/browserpid=%d", browserPID)}
+	if err := exec.Command(setup, args...).Start(); err != nil {
+		fail(500, "Couldn't start the installer: "+err.Error())
 		return
 	}
 	sendJ(w, 200, map[string]any{"ok": true, "version": rel.Tag})
@@ -212,15 +203,9 @@ func handleUpdateInstall(w http.ResponseWriter, r *http.Request) {
 		fl.Flush()
 	}
 	go func() {
-		time.Sleep(500 * time.Millisecond)
-		if err := restartFn(); err != nil {
-			fmt.Fprintln(os.Stderr, "restart failed:", err)
-			// Put the old version back so the board keeps working.
-			os.Rename(exe, newPath)
-			os.Rename(oldPath, exe)
-			updateMu.Lock()
-			installing = false
-			updateMu.Unlock()
+		time.Sleep(700 * time.Millisecond)
+		if quitFn != nil {
+			quitFn() // let go of the program file so the installer can replace it
 		}
 	}()
 }

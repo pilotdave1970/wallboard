@@ -1,7 +1,5 @@
-# Builds Jet's Wallboard on Windows and attaches it to a GitHub release:
-#   JetsWallboardSetup.exe      - installer (Start menu, desktop, start with Windows, uninstaller)
-#   JetsWallboard.exe           - the app itself (also what the in-app update button downloads)
-#   JetsWallboard-Windows.zip   - portable version, no install
+# Builds Jet's Wallboard on Windows and attaches one file to the GitHub release:
+#   JetsWallboardSetup.exe - the installer. It's also what the board's update button downloads.
 #
 # To ship a new version: Releases > "Draft a new release" > new tag like v1.1.0 > Publish.
 name: Build Windows release
@@ -45,12 +43,6 @@ jobs:
           go build -trimpath -ldflags "-s -w -H windowsgui -X main.Version=$env:TAG" -o JetsWallboard.exe .
           Get-Item JetsWallboard.exe | Format-List Name, Length
 
-      - name: Make the portable zip
-        run: |
-          New-Item -ItemType Directory -Force dist\JetsWallboard | Out-Null
-          Copy-Item JetsWallboard.exe, package\* dist\JetsWallboard\
-          Compress-Archive -Path dist\JetsWallboard -DestinationPath JetsWallboard-Windows.zip -Force
-
       - name: Build the installer
         run: |
           $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
@@ -65,4 +57,4 @@ jobs:
       - name: Attach to the release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$env:TAG" JetsWallboardSetup.exe JetsWallboard.exe JetsWallboard-Windows.zip --clobber
+        run: gh release upload "$env:TAG" JetsWallboardSetup.exe --clobber

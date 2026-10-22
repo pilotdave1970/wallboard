@@ -1,8 +1,12 @@
 ; Jet's Wallboard installer (Inno Setup 6, built on Windows by GitHub Actions).
-; Installs for the current user only (no admin prompt) into
-; %LOCALAPPDATA%\Programs\Jets Wallboard, so the app can update itself later.
+; One installer, no choices to make: installs for the current user (no admin prompt) into
+; %LOCALAPPDATA%\Programs\Jets Wallboard and adds Start menu and desktop shortcuts.
+; Startup, full screen and other options live in the board: Settings > Board > This PC.
 ;
-; Build:  iscc /DMyAppVersion=1.1.0 /DSourceExe=..\JetsWallboard.exe installer\JetsWallboard.iss
+; The board's update button runs this same installer silently with /update=1 /browserpid=N,
+; and the new version takes over the board window that's already open.
+;
+; Build:  iscc /DMyAppVersion=1.1.0 /DSourceExe=C:\path\JetsWallboard.exe installer\JetsWallboard.iss
 
 #ifndef MyAppVersion
   #define MyAppVersion "0.0.0"
@@ -28,6 +32,7 @@ DefaultDirName={localappdata}\Programs\Jets Wallboard
 DisableDirPage=yes
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
+DisableReadyPage=yes
 PrivilegesRequired=lowest
 OutputDir=..\dist
 OutputBaseFilename=JetsWallboardSetup
@@ -43,31 +48,27 @@ MinVersion=10.0
 CloseApplications=yes
 RestartApplications=no
 
-[Tasks]
-Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Shortcuts:"
-Name: "fullscreenicon"; Description: "Create a full-screen shortcut on the desktop"; GroupDescription: "Shortcuts:"; Flags: unchecked
-Name: "startup"; Description: "Start the wallboard when Windows starts"; GroupDescription: "Startup:"; Flags: unchecked
-Name: "startup\full"; Description: "Full screen"; Flags: unchecked
-
 [Files]
 Source: "{#SourceExe}"; DestDir: "{app}"; DestName: "{#MyAppExe}"; Flags: ignoreversion
-Source: "..\package\README.txt"; DestDir: "{app}"; Flags: ignoreversion isreadme
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExe}"
-Name: "{autoprograms}\{#MyAppName} (Full Screen)"; Filename: "{app}\{#MyAppExe}"; Parameters: "--fullscreen"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExe}"; Tasks: desktopicon
-Name: "{autodesktop}\{#MyAppName} (Full Screen)"; Filename: "{app}\{#MyAppExe}"; Parameters: "--fullscreen"; Tasks: fullscreenicon
-Name: "{userstartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExe}"; Tasks: startup and not startup\full
-Name: "{userstartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExe}"; Parameters: "--fullscreen"; Tasks: startup\full
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExe}"
 
 [Run]
+; After a normal install: offer to open it.
 Filename: "{app}\{#MyAppExe}"; Description: "Open Jet's Wallboard now"; Flags: nowait postinstall skipifsilent
+; After an update from inside the board: start the new version on the window that's already open.
+Filename: "{app}\{#MyAppExe}"; Parameters: "--browser-pid={param:browserpid|-1}"; Flags: nowait; Check: IsUpdate
 
 [InstallDelete]
-; leftovers from a self-update
+; leftovers from older versions that updated themselves in place
 Type: files; Name: "{app}\{#MyAppExe}.old"
 Type: files; Name: "{app}\{#MyAppExe}.new"
+
+[UninstallRun]
+; Stop starting with Windows.
+Filename: "{sys}\reg.exe"; Parameters: "delete HKCU\Software\Microsoft\Windows\CurrentVersion\Run /v JetsWallboard /f"; Flags: runhidden; RunOnceId: "RemoveStartup"
 
 [UninstallDelete]
 Type: files; Name: "{app}\{#MyAppExe}.old"
@@ -75,12 +76,18 @@ Type: files; Name: "{app}\{#MyAppExe}.new"
 ; Settings and pictures in %APPDATA%\JetsWallboard are kept on purpose.
 
 [Code]
-// Stop a running board (and its helper) before installing or uninstalling, so the .exe can be replaced.
+function IsUpdate(): Boolean;
+begin
+  Result := ExpandConstant('{param:update|0}') = '1';
+end;
+
+// Stop a running board helper before installing or uninstalling, so the .exe can be replaced.
 procedure StopWallboard();
 var
   Code: Integer;
 begin
   Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM {#MyAppExe}', '', SW_HIDE, ewWaitUntilTerminated, Code);
+  Sleep(500);
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;

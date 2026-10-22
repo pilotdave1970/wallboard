@@ -271,6 +271,8 @@ func handler(lan bool, port int) http.HandlerFunc {
 					ct = "application/json"
 				}
 				send(w, st, body, ct)
+			case p == "/api/pc":
+				handlePC(w, r, lan)
 			case p == "/api/update/check":
 				handleUpdateCheck(w, r)
 			case p == "/api/view":
@@ -310,6 +312,8 @@ func handler(lan bool, port int) http.HandlerFunc {
 			sendS(w, 200, `{"ok":true}`, "application/json")
 		case "POST":
 			switch p {
+			case "/api/pc":
+				handlePC(w, r, lan)
 			case "/api/update/install":
 				handleUpdateInstall(w, r)
 			case "/api/hidepointer":
@@ -502,6 +506,13 @@ func main() {
 		messageBox("Jet's Wallboard", "Couldn't create the settings folder:\n"+err.Error())
 		return
 	}
+	// Choices made in Settings > Board (the command-line switches still work too).
+	if settingBool("pcFullscreen") {
+		*fullscreen = true
+	}
+	if settingBool("pcLan") {
+		*lan = true
+	}
 	u := fmt.Sprintf("http://localhost:%d/", *port)
 	host := "127.0.0.1"
 	if *lan {
@@ -527,6 +538,7 @@ func main() {
 	srv := &http.Server{Handler: handler(*lan, *port)}
 	go srv.Serve(ln)
 	restartFn = relaunch(func() { srv.Close() })
+	quitFn = func() { srv.Close(); os.Exit(0) }
 
 	if *noWindow {
 		select {}

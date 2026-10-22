@@ -776,6 +776,13 @@ body.kb-open nav,body.kb-open .alert-banner,body.kb-open .theme-tray{display:non
           <p class="hint" style="margin:0" id="b-addr">Checking…</p>
           <div class="field"><span>Screens picked on your PC also show on the Pi (changes right away)</span><div class="range" id="b-mirror"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
         </div>
+        <div class="card" id="pc-card" hidden>
+          <h3>This PC</h3>
+          <div class="field"><span>Start the wallboard when Windows starts</span><div class="range" id="pc-start"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
+          <div class="field"><span>Open full screen (F11 switches any time)</span><div class="range" id="pc-full"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
+          <div class="field"><span>Phones and tablets at home can open the board</span><div class="range" id="pc-lan"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
+          <span class="msg" id="pc-msg"></span>
+        </div>
         <div class="card" id="upd-card" hidden>
           <h3>Updates</h3>
           <p class="hint" style="margin:0" id="upd-ver">This version: …</p>
@@ -1731,7 +1738,8 @@ async function drawAddress(){
   if(!SERVER){el.textContent="This works once the board is installed on the Pi with install.sh. Then you can open the board in your PC's web browser, tap the gear, and change everything there with your own keyboard.";return;}
   try{const j=await (await fetch("/api/ping",{cache:"no-store"})).json();
     const host=(j.host||"").toLowerCase();
-    if(j.windows){$("#upd-card").hidden=false;$("#upd-ver").textContent="This version: "+(j.version||"?");el.innerHTML=`Running on this PC. Settings and pictures are saved in <b>${esc(j.dir||"")}</b>.`+(j.lan&&j.ip?` Other devices at home can open it at <b>http://${esc(j.ip)}:${j.port}</b>.`:` To open it from a phone or tablet at home too, start JetsWallboard.exe with <b>--lan</b>.`);return;}
+    if(j.windows){$("#upd-card").hidden=false;$("#pc-card").hidden=false;drawPC();
+      const h=el.previousElementSibling; if(h&&h.tagName==="H3")h.textContent="Where it's saved"; const mf=$("#b-mirror")&&$("#b-mirror").closest(".field"); if(mf)mf.hidden=true;$("#upd-ver").textContent="This version: "+(j.version||"?");el.innerHTML=`Running on this PC. Settings and pictures are saved in <b>${esc(j.dir||"")}</b>.`+(j.lan&&j.ip?` Phones and tablets at home can open it at <b>http://${esc(j.ip)}:${j.port}</b>.`:` To open it from a phone or tablet at home too, turn on the last switch under This PC.`);return;}
     el.innerHTML=`On your PC, open a web browser and go to <b>http://${esc(host)}.local:8088</b>${j.ip?` or <b>http://${esc(j.ip)}:8088</b>`:""}. You'll see this board. Click the gear to change settings with your own keyboard; it's the easiest way to paste a Google Calendar address. Changes show up here within 15 seconds.`;
   }catch(e){el.textContent="Couldn't get the Pi's network address right now.";}
 }
@@ -1815,6 +1823,7 @@ $("#settings").addEventListener("click",e=>{
   const r=b.closest(".range"); if(r&&b.dataset.v!==undefined){seg(r.id,b.dataset.v);
     if(r.id==="s-same")$("#s-home").hidden=b.dataset.v==="1";
     if(r.id==="f-src"){showSrc(b.dataset.v);say("s-adsb-msg","");}
+    if(r.id==="pc-start"||r.id==="pc-full"||r.id==="pc-lan")setPC(r.id,b.dataset.v==="1");
     if(r.id==="s-dim")drawDim();
     if(r.id==="b-mirror"){const p=segPatch("mir");Object.assign(CONFIG,p);saveSettings(p);}
     if(r.id==="d-idlescr"){const p=segPatch("main");Object.assign(CONFIG,p);saveSettings(p);resetIdle();}
@@ -2275,6 +2284,23 @@ if(SERVER&&!SAVED.weather&&!SAVED.home) setTimeout(()=>{
   say("s-loc-msg","Welcome! Search for your town above, then Save location.","ok"); },900);
 $("#upd-check").addEventListener("click",checkUpdate);
 $("#upd-install").addEventListener("click",installUpdate);
+
+/* ---------- This PC (Windows app) ---------- */
+async function drawPC(){
+  try{const j=await (await fetch("/api/pc",{cache:"no-store"})).json();
+    seg("pc-start",j.startup?1:0); seg("pc-full",j.fullscreen?1:0); seg("pc-lan",j.lan?1:0);}catch(e){}
+}
+async function setPC(id,on){
+  const key={"pc-start":"startup","pc-full":"fullscreen","pc-lan":"lan"}[id];
+  if(key==="fullscreen"){ try{ if(on&&!document.fullscreenElement)document.documentElement.requestFullscreen(); else if(!on&&document.fullscreenElement)document.exitFullscreen(); }catch(e){} }
+  try{const r=await fetch("/api/pc",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({[key]:on})});
+    if(!r.ok)throw new Error(await r.text()); const j=await r.json();
+    if(j.restarting){ say("pc-msg","Restarting the helper…","ok");
+      for(let i=0;i<30;i++){await new Promise(z=>setTimeout(z,700)); try{const p=await (await fetch("/api/ping",{cache:"no-store"})).json(); if(p.lan===on){drawAddress();say("pc-msg","Done.","ok");return;}}catch(e){}}
+      say("pc-msg","Close the board and open it again to finish.","bad"); return; }
+    say("pc-msg",key==="startup"?(on?"It will start with Windows.":"It won't start with Windows."):"Saved.","ok");
+  }catch(e){ say("pc-msg",(e&&e.message)||"Couldn't change that.","bad"); drawPC(); }
+}
 </script>
 
 </html>
